@@ -81,6 +81,7 @@ Recommended variables:
 ## Linux deployment
 
 - Read cloud readiness checklist: docs/linux-cloud-readiness.md
+- Aliyun ECS deployment guide: docs/aliyun-ecs-deployment.md
 - Docker production template: infra/docker/docker-compose.prod.yml
 - Systemd templates: infra/systemd/
 - Linux bootstrap script: scripts/linux-bootstrap.sh
