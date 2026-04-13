@@ -81,13 +81,13 @@ def upgrade() -> None:
         USING GIN (to_tsvector('simple', coalesce(search_text, '')))
         """
     )
-    op.execute(
-        """
-        CREATE INDEX IF NOT EXISTS idx_normalized_events_embedding_hnsw
-        ON normalized_events
-        USING hnsw (embedding vector_cosine_ops)
-        """
-    )
+    # op.execute(
+    #     """
+    #     CREATE INDEX IF NOT EXISTS idx_normalized_events_embedding_hnsw
+    #     ON normalized_events
+    #     USING hnsw (embedding vector_cosine_ops)
+    #     """
+    # )
 
     op.create_index(
         "idx_event_sources_raw_document_id",

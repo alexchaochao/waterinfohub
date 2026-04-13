@@ -7,7 +7,7 @@ sources:
     method: requests
     enabled: true
     start_urls:
-      - https://na.itron.com/w/news
+      - https://investors.itron.com/press-releases
 
   - id: landisgyr_news
     name: Landis+Gyr Newsroom
@@ -17,7 +17,7 @@ sources:
     method: requests
     enabled: true
     start_urls:
-      - https://www.landisgyr.com/news/
+      - https://www.landisgyr.com/newsroom-2/
 
   - id: diehl_metering_news
     name: Diehl Metering News
@@ -27,4 +27,4 @@ sources:
     method: requests
     enabled: true
     start_urls:
-      - https://www.diehl.com/metering/en/press/
+      - https://www.diehl.com/metering/en/press-media/press-room/

@@ -44,6 +44,8 @@ The MVP should do four things reliably:
 python -m pip install -e .
 alembic upgrade head
 python -m apps.worker.main
+python -m apps.worker.main --scheduler
+python -m apps.worker.main --weekly-report
 uvicorn apps.api.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -53,7 +55,7 @@ uvicorn apps.api.main:app --host 0.0.0.0 --port 8000
 - normalize: convert new raw_documents into normalized_events, standard_events, competitor_events, and event_sources
   - LLM integration: For standard and competitor events, summary and impact_analysis fields are extracted via LLM (OpenAI-compatible API, prompt in configs/prompts), with local fallback if LLM unavailable.
 - weekly-report: generate markdown from normalized_events, persist weekly_reports, and write report files to data/reports
-- worker: runs ingest + normalize in one pass
+- worker: supports one-off pipeline runs and long-lived scheduled mode
 - api endpoints:
 	- POST /jobs/ingest/run
 	- POST /jobs/normalize/run

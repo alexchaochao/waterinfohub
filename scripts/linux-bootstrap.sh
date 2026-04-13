@@ -14,7 +14,7 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 
 echo "[4/5] Installing Playwright browser"
-python -m playwright install chromium
+python -m playwright install --with-deps chromium
 
 echo "[5/5] Bootstrap completed"
 echo "Next: configure .env and run SQL scripts in infra/sql"

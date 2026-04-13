@@ -7,11 +7,24 @@ from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 from sqlalchemy.exc import IntegrityError
 
 from waterinfohub.collectors.source_loader import SourceDefinition, load_sources
 from waterinfohub.db.models import RawDocument
 from waterinfohub.db.session import get_session
+from waterinfohub.services.structured_logger import get_structured_logger
+
+logger = get_structured_logger("ingest")
+
+DEFAULT_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 
 @dataclass(slots=True)
@@ -47,17 +60,40 @@ def run_ingest(config_dir: Path) -> IngestStats:
                 except IntegrityError:
                     session.rollback()
                     stats.duplicated += 1
-                except Exception:
+                except Exception as exc:
+                    import traceback
+
                     session.rollback()
                     stats.failed += 1
+                    logger.error(
+                        f"Ingest failed for source {getattr(source, 'name', None)} url {url}",
+                        extra={
+                            "extra": {
+                                "source": getattr(source, "name", None),
+                                "url": url,
+                                "exception": str(exc),
+                                "traceback": traceback.format_exc(),
+                            }
+                        },
+                    )
     return stats
 
 
 def _fetch_source_page(source: SourceDefinition, url: str) -> RawDocument:
-    with httpx.Client(timeout=20.0, follow_redirects=True) as client:
-        response = client.get(url)
-        response.raise_for_status()
-        html = response.text
+    try:
+        html = _fetch_via_http(url)
+    except httpx.HTTPStatusError as exc:
+        if _should_fallback_to_playwright(exc.response.status_code):
+            logger.warning(
+                f"httpx blocked for {url}, fallback to Playwright: {exc.response.status_code}"
+            )
+            html = _fetch_via_playwright(url)
+        else:
+            raise
+    except httpx.HTTPError as exc:
+        logger.warning(f"httpx failed for {url}, fallback to Playwright: {exc}")
+        html = _fetch_via_playwright(url)
+
     soup = BeautifulSoup(html, "html.parser")
     title = _safe_text(soup.title.string) if soup.title and soup.title.string else None
     text = _safe_text(soup.get_text(" ", strip=True))[:8000]
@@ -74,6 +110,28 @@ def _fetch_source_page(source: SourceDefinition, url: str) -> RawDocument:
         content_hash=content_hash,
         status="new",
     )
+
+
+def _fetch_via_http(url: str) -> str:
+    with httpx.Client(timeout=20.0, follow_redirects=True, headers=DEFAULT_HEADERS) as client:
+        response = client.get(url)
+        response.raise_for_status()
+        return response.text
+
+
+def _fetch_via_playwright(url: str) -> str:
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(user_agent=DEFAULT_HEADERS["User-Agent"])
+        try:
+            page.goto(url, timeout=30000, wait_until="networkidle")
+            return page.content()
+        finally:
+            browser.close()
+
+
+def _should_fallback_to_playwright(status_code: int) -> bool:
+    return status_code in {401, 403, 429} or 500 <= status_code < 600
 
 
 def _safe_text(text: str) -> str:

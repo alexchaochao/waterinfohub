@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -8,12 +9,20 @@ from pathlib import Path
 
 from sqlalchemy import select
 
-from waterinfohub.db.models import CompetitorEvent, EventSource, NormalizedEvent, RawDocument, StandardEvent
+from waterinfohub.core.settings import BASE_DIR
+from waterinfohub.db.models import (
+    CompetitorEvent,
+    EventSource,
+    NormalizedEvent,
+    RawDocument,
+    StandardEvent,
+)
 from waterinfohub.db.session import get_session
-
-from waterinfohub.services.scoring import clamp_score, load_scoring_rules
 from waterinfohub.services.llm_client import LLMClient, load_prompt
-from waterinfohub.core.settings import settings
+from waterinfohub.services.scoring import clamp_score, load_scoring_rules
+from waterinfohub.services.structured_logger import get_structured_logger
+
+logger = get_structured_logger("normalize")
 
 
 TECH_KEYWORDS = {
@@ -83,12 +92,25 @@ def run_normalization(config_dir: Path) -> NormalizationStats:
                 _ensure_event_source(session, event.id, raw_document)
                 raw_document.status = "normalized"
                 session.commit()
-            except Exception:
+            except Exception as e:
+                import traceback
                 session.rollback()
                 raw_document.status = "error"
                 session.add(raw_document)
                 session.commit()
                 stats.failed += 1
+                logger.error(
+                    f"Normalize failed for raw_document {getattr(raw_document, 'id', None)}",
+                    extra={
+                        "extra": {
+                            "raw_document_id": getattr(raw_document, "id", None),
+                            "source_name": getattr(raw_document, "source_name", None),
+                            "source_url": getattr(raw_document, "source_url", None),
+                            "exception": str(e),
+                            "traceback": traceback.format_exc(),
+                        }
+                    },
+                )
 
     return stats
 
@@ -125,16 +147,16 @@ def _build_standard_payload(
     importance = _score_standard_event(searchable, raw_document.source_type, rules)
     confidence = clamp_score(0.65 + (0.1 if standard_no else 0.0) + (0.05 if technologies else 0.0))
 
-    # LLM抽取摘要
+    # LLM鎶藉彇鎽樿
     summary = None
     try:
         llm = LLMClient()
-        prompt_path = settings.BASE_DIR / "configs" / "prompts" / "standard_extract.md"
+        prompt_path = BASE_DIR / "configs" / "prompts" / "standard_extract.md"
         prompt_template = load_prompt(prompt_path)
-        # 用prompt+正文
+        # 鐢╬rompt+姝ｆ枃
         prompt = f"{prompt_template}\n\nInput:\nTitle: {title}\nText: {raw_text}"
         llm_result = llm.run_completion(prompt)
-        # 尝试解析JSON
+        # 灏濊瘯瑙ｆ瀽JSON
         if llm_result:
             parsed = json.loads(llm_result)
             summary = parsed.get("relevance_reason") or parsed.get("standard_name") or None
@@ -162,7 +184,6 @@ def _build_standard_payload(
         "confidence": confidence,
         "published_at": raw_document.published_at,
         "dedupe_key": dedupe_key,
-        "embedding": None,
         "standard_no": standard_no,
         "standard_name": title,
         "standard_scope": _derive_standard_scope(searchable),
@@ -186,11 +207,11 @@ def _build_competitor_payload(
     importance = _score_competitor_event(event_type, raw_document.source_type, rules)
     confidence = clamp_score(0.65 + (0.05 if technologies else 0.0) + (0.05 if company_name else 0.0))
 
-    # LLM抽取 impact_analysis
+    # LLM鎶藉彇 impact_analysis
     impact_analysis = None
     try:
         llm = LLMClient()
-        prompt_path = settings.BASE_DIR / "configs" / "prompts" / "competitor_analysis.md"
+        prompt_path = BASE_DIR / "configs" / "prompts" / "competitor_analysis.md"
         prompt_template = load_prompt(prompt_path)
         prompt = f"{prompt_template}\n\nInput:\nTitle: {title}\nText: {raw_text}"
         llm_result = llm.run_completion(prompt)
@@ -222,7 +243,6 @@ def _build_competitor_payload(
         "confidence": confidence,
         "published_at": raw_document.published_at,
         "dedupe_key": dedupe_key,
-        "embedding": None,
         "company_name": company_name,
         "market": _detect_market(searchable),
         "strategic_intent": _infer_strategic_intent(event_type, technologies),
@@ -314,11 +334,11 @@ def _match_standard_no(text: str) -> str | None:
 
 
 def _detect_standard_action(text: str) -> str:
-    if any(token in text for token in ["withdrawn", "abolish", "废止"]):
+    if any(token in text for token in ["withdrawn", "abolish", "搴熸"]):
         return "withdrawn"
-    if any(token in text for token in ["update", "revision", "amendment", "修订"]):
+    if any(token in text for token in ["update", "revision", "amendment", "淇"]):
         return "update"
-    if any(token in text for token in ["consultation", "draft", "征求意见"]):
+    if any(token in text for token in ["consultation", "draft", "寰佹眰鎰忚"]):
         return "consultation"
     return "new"
 

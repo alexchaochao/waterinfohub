@@ -32,12 +32,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml README.md /app/
+COPY alembic.ini /app/
+COPY alembic /app/alembic
 COPY src /app/src
 COPY apps /app/apps
 COPY configs /app/configs
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir . \
-    && playwright install chromium
+    && playwright install chromium \
+    && mkdir -p /app/data/reports /app/logs
 
 CMD ["uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
