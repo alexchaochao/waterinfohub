@@ -1,10 +1,11 @@
-import json
+锘縤mport json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import httpx
 
 from waterinfohub.core.settings import settings
+
 
 class LLMClient:
     def __init__(self, base_url: Optional[str] = None, api_key: Optional[str] = None, model: Optional[str] = None):
@@ -27,9 +28,10 @@ class LLMClient:
             resp.raise_for_status()
             data = resp.json()
             return data["choices"][0]["message"]["content"].strip()
-        except Exception as e:
-            # 降级：返回空字符串，调用方自行处理
+        except Exception:
+            # Return an empty string and let the caller handle fallback behavior.
             return ""
+
 
 def load_prompt(prompt_path: Path) -> str:
     with open(prompt_path, encoding="utf-8") as f:

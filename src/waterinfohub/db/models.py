@@ -1,6 +1,6 @@
-from datetime import datetime
+ï»¿from datetime import datetime
 
-# from pgvector.sqlalchemy import Vector # ×¢ÊÍµôpgvectorÒÀÀµ
+# from pgvector.sqlalchemy import Vector  # pgvector dependency disabled for now
 from sqlalchemy import DateTime, Float, ForeignKey, Index, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -68,7 +68,7 @@ class NormalizedEvent(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     dedupe_key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    # embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)  # ×¢ÊÍµôpgvector×Ö¶Î
+    # embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
 
 
 class EventSource(Base):

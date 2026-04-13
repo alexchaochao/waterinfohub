@@ -11,6 +11,7 @@ from playwright.sync_api import sync_playwright
 from sqlalchemy.exc import IntegrityError
 
 from waterinfohub.collectors.source_loader import SourceDefinition, load_sources
+from waterinfohub.core.settings import settings
 from waterinfohub.db.models import RawDocument
 from waterinfohub.db.session import get_session
 from waterinfohub.services.structured_logger import get_structured_logger
@@ -83,16 +84,17 @@ def _fetch_source_page(source: SourceDefinition, url: str) -> RawDocument:
     try:
         html = _fetch_via_http(url)
     except httpx.HTTPStatusError as exc:
-        if _should_fallback_to_playwright(exc.response.status_code):
-            logger.warning(
-                f"httpx blocked for {url}, fallback to Playwright: {exc.response.status_code}"
-            )
-            html = _fetch_via_playwright(url)
+        if settings.playwright_fallback_enabled and _should_fallback_to_playwright(
+            exc.response.status_code
+        ):
+            html = _fallback_to_playwright(url, exc)
         else:
             raise
     except httpx.HTTPError as exc:
-        logger.warning(f"httpx failed for {url}, fallback to Playwright: {exc}")
-        html = _fetch_via_playwright(url)
+        if settings.playwright_fallback_enabled:
+            html = _fallback_to_playwright(url, exc)
+        else:
+            raise
 
     soup = BeautifulSoup(html, "html.parser")
     title = _safe_text(soup.title.string) if soup.title and soup.title.string else None
@@ -132,6 +134,16 @@ def _fetch_via_playwright(url: str) -> str:
 
 def _should_fallback_to_playwright(status_code: int) -> bool:
     return status_code in {401, 403, 429} or 500 <= status_code < 600
+
+
+def _fallback_to_playwright(url: str, original_error: Exception) -> str:
+    logger.warning(f"httpx failed for {url}, fallback to Playwright: {original_error}")
+    try:
+        return _fetch_via_playwright(url)
+    except Exception as fallback_error:
+        raise RuntimeError(
+            f"Playwright fallback failed for {url}: {fallback_error}"
+        ) from original_error
 
 
 def _safe_text(text: str) -> str:

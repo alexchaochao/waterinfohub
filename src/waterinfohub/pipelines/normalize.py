@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import json
@@ -80,7 +80,7 @@ def run_normalization(config_dir: Path) -> NormalizationStats:
                     )
                 )
                 if event is None:
-                    event = NormalizedEvent(**event_payload)
+                    event = NormalizedEvent(**_normalized_event_fields(event_payload))
                     session.add(event)
                     session.flush()
                     _insert_domain_record(session, raw_document, event.id, event_payload)
@@ -92,8 +92,9 @@ def run_normalization(config_dir: Path) -> NormalizationStats:
                 _ensure_event_source(session, event.id, raw_document)
                 raw_document.status = "normalized"
                 session.commit()
-            except Exception as e:
+            except Exception as exc:
                 import traceback
+
                 session.rollback()
                 raw_document.status = "error"
                 session.add(raw_document)
@@ -106,13 +107,34 @@ def run_normalization(config_dir: Path) -> NormalizationStats:
                             "raw_document_id": getattr(raw_document, "id", None),
                             "source_name": getattr(raw_document, "source_name", None),
                             "source_url": getattr(raw_document, "source_url", None),
-                            "exception": str(e),
+                            "exception": str(exc),
                             "traceback": traceback.format_exc(),
                         }
                     },
                 )
 
     return stats
+
+
+def _normalized_event_fields(payload: dict) -> dict:
+    allowed_fields = {
+        "domain",
+        "event_type",
+        "entity_name",
+        "event_title",
+        "summary",
+        "search_text",
+        "region",
+        "country",
+        "technologies",
+        "tags",
+        "importance_score",
+        "signal_strength",
+        "confidence",
+        "published_at",
+        "dedupe_key",
+    }
+    return {key: value for key, value in payload.items() if key in allowed_fields}
 
 
 def _build_event_payload(raw_document: RawDocument, rules: dict) -> dict | None:
@@ -127,7 +149,6 @@ def _build_event_payload(raw_document: RawDocument, rules: dict) -> dict | None:
     if raw_document.domain == "competitor":
         return _build_competitor_payload(raw_document, title, raw_text, technologies, rules)
     return None
-
 
 
 def _build_standard_payload(
@@ -147,16 +168,13 @@ def _build_standard_payload(
     importance = _score_standard_event(searchable, raw_document.source_type, rules)
     confidence = clamp_score(0.65 + (0.1 if standard_no else 0.0) + (0.05 if technologies else 0.0))
 
-    # LLM抽取摘要
     summary = None
     try:
         llm = LLMClient()
         prompt_path = BASE_DIR / "configs" / "prompts" / "standard_extract.md"
         prompt_template = load_prompt(prompt_path)
-        # 用prompt+正文
         prompt = f"{prompt_template}\n\nInput:\nTitle: {title}\nText: {raw_text}"
         llm_result = llm.run_completion(prompt)
-        # 尝试解析JSON
         if llm_result:
             parsed = json.loads(llm_result)
             summary = parsed.get("relevance_reason") or parsed.get("standard_name") or None
@@ -192,7 +210,6 @@ def _build_standard_payload(
     }
 
 
-
 def _build_competitor_payload(
     raw_document: RawDocument,
     title: str,
@@ -207,7 +224,6 @@ def _build_competitor_payload(
     importance = _score_competitor_event(event_type, raw_document.source_type, rules)
     confidence = clamp_score(0.65 + (0.05 if technologies else 0.0) + (0.05 if company_name else 0.0))
 
-    # LLM抽取 impact_analysis
     impact_analysis = None
     try:
         llm = LLMClient()
@@ -334,11 +350,11 @@ def _match_standard_no(text: str) -> str | None:
 
 
 def _detect_standard_action(text: str) -> str:
-    if any(token in text for token in ["withdrawn", "abolish", "废止"]):
+    if any(token in text for token in ["withdrawn", "abolish"]):
         return "withdrawn"
-    if any(token in text for token in ["update", "revision", "amendment", "修订"]):
+    if any(token in text for token in ["update", "revision", "amendment"]):
         return "update"
-    if any(token in text for token in ["consultation", "draft", "征求意见"]):
+    if any(token in text for token in ["consultation", "draft"]):
         return "consultation"
     return "new"
 

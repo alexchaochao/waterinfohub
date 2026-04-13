@@ -4,9 +4,6 @@ import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 
-from apscheduler.schedulers.blocking import BlockingScheduler
-from apscheduler.triggers.cron import CronTrigger
-
 from waterinfohub.core.settings import settings
 from waterinfohub.pipelines.ingest import run_ingest
 from waterinfohub.pipelines.normalize import run_normalization
@@ -55,6 +52,9 @@ def run_weekly_report_once() -> None:
 
 
 def run_scheduler() -> None:
+    from apscheduler.schedulers.blocking import BlockingScheduler
+    from apscheduler.triggers.cron import CronTrigger
+
     scheduler = BlockingScheduler(timezone=settings.worker_timezone)
     scheduler.add_job(
         run_pipeline_once,

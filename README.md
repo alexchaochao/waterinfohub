@@ -71,6 +71,7 @@ Recommended variables:
 - LLM_API_KEY
 - LLM_MODEL
 - REPORT_OUTPUT_DIR
+- PLAYWRIGHT_FALLBACK_ENABLED
 
 ## Notes
 

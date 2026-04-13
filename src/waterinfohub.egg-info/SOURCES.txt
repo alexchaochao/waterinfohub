@@ -16,3 +16,4 @@ src/waterinfohub/pipelines/weekly_report.py
 src/waterinfohub/services/llm_client.py
 src/waterinfohub/services/report_renderer.py
 src/waterinfohub/services/scoring.py
+src/waterinfohub/services/structured_logger.py

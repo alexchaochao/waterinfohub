@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     llm_api_key: str = "replace-me"
     llm_model: str = "gpt-4.1-mini"
     report_output_dir: Path = BASE_DIR / "data" / "reports"
+    playwright_fallback_enabled: bool = True
     worker_timezone: str = "UTC"
     worker_daily_hour: int = 2
     worker_daily_minute: int = 30

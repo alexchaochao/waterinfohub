@@ -1,4 +1,4 @@
-"""init schema
+ï»¿"""init schema
 
 Revision ID: 20260413_0001
 Revises:
@@ -7,7 +7,7 @@ Create Date: 2026-04-13
 
 from alembic import op
 import sqlalchemy as sa
-# from pgvector.sqlalchemy import Vector # ×¢ÊÍµôpgvectorÒÀÀµ"""
+# from pgvector.sqlalchemy import Vector  # pgvector dependency disabled for now
 from sqlalchemy.dialects import postgresql
 
 
@@ -18,7 +18,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # op.execute("CREATE EXTENSION IF NOT EXISTS vector")  # ×¢ÊÍµôpgvectorÀ©Õ¹
+    # op.execute("CREATE EXTENSION IF NOT EXISTS vector")  # Enable when pgvector is available.
 
     op.create_table(
         "raw_documents",
@@ -59,7 +59,7 @@ def upgrade() -> None:
         sa.Column("first_seen_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("last_seen_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("dedupe_key", sa.Text(), nullable=False, unique=True),
-        # sa.Column("embedding", Vector(1536), nullable=True),  # ×¢ÊÍµôpgvector×Ö¶Î
+        # sa.Column("embedding", Vector(1536), nullable=True),
     )
     op.create_index("idx_normalized_events_domain", "normalized_events", ["domain"])
     op.create_index("idx_normalized_events_published_at", "normalized_events", ["published_at"])
