@@ -1,0 +1,16 @@
+[Unit]
+Description=WaterInfoHub Worker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/waterinfohub
+EnvironmentFile=/opt/waterinfohub/.env
+ExecStart=/opt/waterinfohub/.venv/bin/python -m apps.worker.main
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target

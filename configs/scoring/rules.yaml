@@ -1,0 +1,26 @@
+source_weights:
+  official: 1.0
+  tender: 0.95
+  media: 0.7
+  social: 0.5
+
+importance_rules:
+  standard:
+    base: 0.55
+    authority_bonus: 0.2
+    communication_protocol_bonus: 0.15
+    metrology_bonus: 0.1
+  competitor:
+    base: 0.5
+    new_product_bonus: 0.15
+    award_bonus: 0.2
+    strategic_partnership_bonus: 0.12
+  tender:
+    base: 0.6
+    amount_bonus: 0.1
+    cross_source_bonus: 0.15
+
+thresholds:
+  weekly_body_min_importance: 0.65
+  weekly_appendix_min_importance: 0.4
+  semantic_dedupe_similarity: 0.92

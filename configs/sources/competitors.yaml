@@ -1,0 +1,30 @@
+sources:
+  - id: itron_news
+    name: Itron News
+    domain: competitor
+    entity_name: Itron
+    source_type: official
+    method: requests
+    enabled: true
+    start_urls:
+      - https://na.itron.com/w/news
+
+  - id: landisgyr_news
+    name: Landis+Gyr Newsroom
+    domain: competitor
+    entity_name: Landis+Gyr
+    source_type: official
+    method: requests
+    enabled: true
+    start_urls:
+      - https://www.landisgyr.com/news/
+
+  - id: diehl_metering_news
+    name: Diehl Metering News
+    domain: competitor
+    entity_name: Diehl Metering
+    source_type: official
+    method: requests
+    enabled: true
+    start_urls:
+      - https://www.diehl.com/metering/en/press/

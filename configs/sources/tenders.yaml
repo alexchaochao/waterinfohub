@@ -1,0 +1,17 @@
+sources:
+  - id: ted_europa
+    name: Tenders Electronic Daily
+    domain: tender
+    source_type: tender
+    method: reserved
+    enabled: false
+    start_urls:
+      - https://ted.europa.eu/
+
+  - id: utility_procurement_reserved
+    name: Utility Procurement Reserved
+    domain: tender
+    source_type: tender
+    method: reserved
+    enabled: false
+    start_urls: []

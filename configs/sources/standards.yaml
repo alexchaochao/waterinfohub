@@ -1,0 +1,39 @@
+sources:
+  - id: cn_sac_news
+    name: Standardization Administration of China
+    domain: standard
+    source_type: official
+    method: requests
+    enabled: true
+    start_urls:
+      - https://www.sac.gov.cn/
+    include_keywords:
+      - water meter
+      - metering
+      - measurement
+      - communication protocol
+      - NB-IoT
+      - LoRaWAN
+      - M-Bus
+    exclude_keywords:
+      - food
+      - medical
+      - building material
+
+  - id: oiml_publications
+    name: OIML Publications
+    domain: standard
+    source_type: official
+    method: requests
+    enabled: true
+    start_urls:
+      - https://www.oiml.org/en/files/
+
+  - id: iec_news
+    name: IEC News and Standards
+    domain: standard
+    source_type: official
+    method: requests
+    enabled: true
+    start_urls:
+      - https://www.iec.ch/

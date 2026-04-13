@@ -1,0 +1,12 @@
+.env
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+*.pyc
+data/raw/*
+data/parsed/*
+data/reports/*
+!data/raw/.gitkeep
+!data/parsed/.gitkeep
+!data/reports/.gitkeep

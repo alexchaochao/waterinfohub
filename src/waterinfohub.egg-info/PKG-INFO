@@ -1,0 +1,113 @@
+Metadata-Version: 2.4
+Name: waterinfohub
+Version: 0.1.0
+Summary: Smart water market intelligence hub
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: alembic>=1.15.2
+Requires-Dist: apscheduler>=3.10.4
+Requires-Dist: beautifulsoup4>=4.12.3
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: feedparser>=6.0.11
+Requires-Dist: httpx>=0.28.1
+Requires-Dist: jinja2>=3.1.4
+Requires-Dist: pgvector>=0.3.6
+Requires-Dist: playwright>=1.52.0
+Requires-Dist: psycopg[binary]>=3.2.9
+Requires-Dist: pydantic>=2.11.0
+Requires-Dist: pydantic-settings>=2.8.1
+Requires-Dist: python-dateutil>=2.9.0.post0
+Requires-Dist: python-dotenv>=1.1.0
+Requires-Dist: pyyaml>=6.0.2
+Requires-Dist: sqlalchemy>=2.0.40
+Requires-Dist: tenacity>=9.1.2
+Requires-Dist: uvicorn>=0.34.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3.5; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.26.0; extra == "dev"
+Requires-Dist: ruff>=0.11.5; extra == "dev"
+
+# WaterInfoHub
+
+WaterInfoHub is a lightweight intelligence pipeline for smart water market monitoring.
+
+Current scope:
+
+- Monitor standards and regulation updates
+- Track competitor announcements and analyze signals
+- Reserve tender tracking for phase two
+- Generate a weekly report with source attribution on every item
+
+## Project layout
+
+- apps/api: FastAPI entrypoint
+- apps/worker: scheduled pipeline entrypoint
+- configs/sources: source registry
+- configs/prompts: LLM prompt templates
+- configs/scoring: event scoring rules
+- infra/sql: database schema and reserved phase-two tables
+- src: collectors, parsers, pipelines, models, and services
+- data/reports: generated markdown output
+
+## First milestone
+
+The MVP should do four things reliably:
+
+1. fetch source pages and store raw documents
+2. normalize raw documents into structured events
+3. score and deduplicate events
+4. generate a weekly markdown report with source links
+
+## Suggested run order
+
+1. Install dependencies
+2. Configure environment variables
+3. Run Alembic migrations
+4. Fill source lists in configs/sources
+5. Run the ingest worker daily
+6. Run the weekly report pipeline every week and publish the generated markdown
+
+## Local commands
+
+```bash
+python -m pip install -e .
+alembic upgrade head
+python -m apps.worker.main
+uvicorn apps.api.main:app --host 0.0.0.0 --port 8000
+```
+
+## Current pipeline status
+
+- ingest: fetch configured source pages into raw_documents
+- normalize: convert new raw_documents into normalized_events, standard_events, competitor_events, and event_sources
+  - LLM integration: For standard and competitor events, summary and impact_analysis fields are extracted via LLM (OpenAI-compatible API, prompt in configs/prompts), with local fallback if LLM unavailable.
+- weekly-report: generate markdown from normalized_events, persist weekly_reports, and write report files to data/reports
+- worker: runs ingest + normalize in one pass
+- api endpoints:
+	- POST /jobs/ingest/run
+	- POST /jobs/normalize/run
+	- POST /jobs/pipeline/run
+	- POST /jobs/weekly-report/run
+
+## Environment variables
+
+Recommended variables:
+
+- DATABASE_URL
+- LLM_BASE_URL
+- LLM_API_KEY
+- LLM_MODEL
+- REPORT_OUTPUT_DIR
+
+## Notes
+
+- The project keeps raw documents and normalized events separate to preserve traceability.
+- Tender tracking is reserved in schema and directory structure but is not wired into the MVP yet.
+- Alembic revision 20260413_0002 adds query-oriented fields and indexes for source tracing, weekly ranking, full-text search, and vector search.
+
+## Linux deployment
+
+- Read cloud readiness checklist: docs/linux-cloud-readiness.md
+- Docker production template: infra/docker/docker-compose.prod.yml
+- Systemd templates: infra/systemd/
+- Linux bootstrap script: scripts/linux-bootstrap.sh
