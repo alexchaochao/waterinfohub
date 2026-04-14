@@ -38,8 +38,10 @@ COPY src /app/src
 COPY apps /app/apps
 COPY configs /app/configs
 
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir . \
+RUN --mount=type=cache,id=pip,target=/root/.cache/pip \
+    --mount=type=cache,id=playwright,target=/root/.cache/ms-playwright \
+    pip install --upgrade pip \
+    && pip install . \
     && playwright install chromium \
     && mkdir -p /app/data/reports /app/logs
 
