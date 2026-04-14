@@ -1,3 +1,4 @@
+from waterinfohub.services.wework_notify import send_wework_message
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -85,6 +86,15 @@ def run_weekly_report(config_dir: Path, reference_date: date | None = None) -> W
         session.commit()
 
     output_path = _write_report_file(report_week, markdown)
+    # 企业微信推送周报
+    from waterinfohub.core.settings import settings
+    msg = (
+        f"【WaterInfoHub 周报】\n"
+        f"周报已生成：{output_path.name}\n"
+        f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"路径：{output_path}"
+    )
+    send_wework_message(msg, getattr(settings, "wework_webhook_url", None))
     return WeeklyReportStats(
         report_week=report_week,
         selected=len(selected_items),

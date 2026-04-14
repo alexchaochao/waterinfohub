@@ -21,6 +21,7 @@ from waterinfohub.db.session import get_session
 from waterinfohub.services.llm_client import LLMClient, load_prompt
 from waterinfohub.services.scoring import clamp_score, load_scoring_rules
 from waterinfohub.services.structured_logger import get_structured_logger
+from waterinfohub.services.wework_notify import send_wework_message
 
 logger = get_structured_logger("normalize")
 
@@ -113,6 +114,15 @@ def run_normalization(config_dir: Path) -> NormalizationStats:
                     },
                 )
 
+    # 企业微信通知
+    from waterinfohub.core.settings import settings
+    if getattr(settings, "worker_daily_notify_enabled", True):
+        msg = (
+            f"【WaterInfoHub 日任务-归一化】\n"
+            f"执行时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"处理：{stats.processed}，归一化：{stats.normalized}，跳过：{stats.skipped}，重复：{stats.duplicated}，失败：{stats.failed}"
+        )
+        send_wework_message(msg, getattr(settings, "wework_webhook_url", None))
     return stats
 
 

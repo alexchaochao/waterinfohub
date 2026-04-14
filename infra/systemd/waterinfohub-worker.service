@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/waterinfohub
-EnvironmentFile=/opt/waterinfohub/.env
+EnvironmentFile=/opt/waterinfohub/.env.prod
 ExecStart=/opt/waterinfohub/.venv/bin/python -m apps.worker.main
 Restart=always
 RestartSec=5

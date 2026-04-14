@@ -7,6 +7,8 @@ BASE_DIR = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
+    wework_webhook_url: str | None = None
+    worker_daily_notify_enabled: bool = True
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/waterinfohub"
     llm_base_url: str = "https://api.openai.com/v1"
     llm_api_key: str = "replace-me"
@@ -20,7 +22,7 @@ class Settings(BaseSettings):
     worker_weekly_hour: int = 3
     worker_weekly_minute: int = 0
 
-    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env.prod", extra="ignore")
 
 
 settings = Settings()

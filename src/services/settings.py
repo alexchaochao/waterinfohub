@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4.1-mini"
     report_output_dir: Path = BASE_DIR / "data" / "reports"
 
-    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env.prod", extra="ignore")
 
 
 settings = Settings()

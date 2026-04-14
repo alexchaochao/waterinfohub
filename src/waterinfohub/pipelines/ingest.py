@@ -1,9 +1,12 @@
+
+# 重新保存为UTF-8纯净格式，移除所有非法字符
 from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
+from datetime import datetime
 
 import httpx
 from bs4 import BeautifulSoup
@@ -15,6 +18,7 @@ from waterinfohub.core.settings import settings
 from waterinfohub.db.models import RawDocument
 from waterinfohub.db.session import get_session
 from waterinfohub.services.structured_logger import get_structured_logger
+from waterinfohub.services.wework_notify import send_wework_message
 
 logger = get_structured_logger("ingest")
 
@@ -77,6 +81,15 @@ def run_ingest(config_dir: Path) -> IngestStats:
                             }
                         },
                     )
+    # 企业微信通知
+    if getattr(settings, "worker_daily_notify_enabled", True):
+        msg = (
+            f"[WaterInfoHub Daily - Ingest]\\n"
+            f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n"
+            f"Sources: {len(all_sources)}\\n"
+            f"Inserted: {stats.inserted}, Duplicated: {stats.duplicated}, Failed: {stats.failed}"
+        )
+        send_wework_message(msg, getattr(settings, "wework_webhook_url", None))
     return stats
 
 
