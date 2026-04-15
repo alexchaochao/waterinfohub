@@ -39,10 +39,9 @@ COPY apps /app/apps
 COPY configs /app/configs
 
 RUN --mount=type=cache,id=pip,target=/root/.cache/pip \
-    --mount=type=cache,id=playwright,target=/root/.cache/ms-playwright \
     pip install --upgrade pip \
     && pip install . \
-    && playwright install chromium \
+    && python -m playwright install --with-deps chromium \
     && mkdir -p /app/data/reports /app/logs
 
 CMD ["uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
