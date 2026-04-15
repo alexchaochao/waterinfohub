@@ -1,12 +1,12 @@
 sources:
-  - id: cn_sac_news
-    name: Standardization Administration of China
+  - id: lora_alliance
+    name: LoRa Alliance
     domain: standard
     source_type: official
     method: requests
     enabled: true
     start_urls:
-      - https://www.sac.gov.cn/
+      - https://lora-alliance.org/
     include_keywords:
       - water meter
       - metering
@@ -29,11 +29,11 @@ sources:
     start_urls:
       - https://www.oiml.org/en/files/
 
-  - id: iec_news
-    name: IEC News and Standards
+  - id: welmec
+    name: WELMEC
     domain: standard
     source_type: official
     method: requests
     enabled: true
     start_urls:
-      - https://www.iec.ch/
+      -https://www.welmec.org/
